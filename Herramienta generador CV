@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Generador de Carta y CV — Ramón Díaz Ríos</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f6f7; color: #1c2833; min-height: 100vh; padding: 2rem 1rem; }
+  .container { max-width: 780px; margin: 0 auto; }
+  .card { background: #fff; border-radius: 12px; border: 1px solid #e0e3e7; padding: 1.75rem; margin-bottom: 1.25rem; }
+  h1 { font-size: 22px; font-weight: 600; color: #0d2137; margin-bottom: 4px; }
+  .sub { font-size: 13px; color: #5d6d7e; margin-bottom: 1.5rem; }
+  label { display: block; font-size: 13px; font-weight: 500; color: #5d6d7e; margin-bottom: 5px; }
+  input, select, textarea {
+    width: 100%; font-family: inherit; font-size: 14px; color: #1c2833;
+    background: #fff; border: 1px solid #cdd3da; border-radius: 8px;
+    padding: 9px 12px; margin-bottom: 1rem; resize: vertical;
+  }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: #2e86c1; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+  .chip {
+    font-size: 12px; padding: 4px 11px; border-radius: 99px;
+    border: 1px solid #cdd3da; color: #5d6d7e; cursor: pointer;
+    background: #f4f6f7; transition: all 0.15s; user-select: none;
+  }
+  .chip.active { background: #eaf2fb; border-color: #2e86c1; color: #1a5276; font-weight: 500; }
+  .chip.recommended { background: #eafaf1; border-color: #1e8449; color: #1d6a39; font-weight: 500; }
+  .chip.recommended::after { content: ' ★'; font-size: 10px; }
+  .btn-analyze {
+    font-size: 12px; padding: 6px 14px; border-radius: 8px;
+    border: 1px solid #1e8449; background: #eafaf1; color: #1d6a39;
+    cursor: pointer; font-family: inherit; margin-bottom: 6px;
+  }
+  .btn-analyze:disabled { opacity: 0.4; cursor: not-allowed; }
+  .rec-hint { font-size: 12px; color: #1d6a39; min-height: 16px; margin-bottom: 1rem; font-style: italic; }
+  .btn-gen {
+    width: 100%; padding: 13px; border-radius: 8px; font-size: 15px; font-weight: 600;
+    cursor: pointer; border: none; background: #1a5276; color: #fff; font-family: inherit;
+    transition: background 0.15s;
+  }
+  .btn-gen:hover { background: #154360; }
+  .btn-gen:disabled { background: #aab7c4; cursor: not-allowed; }
+  .progress { height: 3px; border-radius: 2px; background: #e0e3e7; overflow: hidden; margin: 12px 0; display: none; }
+  .progress.active { display: block; }
+  .progress-inner { height: 100%; width: 30%; background: #2e86c1; border-radius: 2px; animation: slide 1.4s ease-in-out infinite; }
+  @keyframes slide { 0%{transform:translateX(-100%)} 100%{transform:translateX(400%)} }
+  .status { font-size: 12px; color: #5d6d7e; margin-top: 6px; min-height: 16px; }
+  .out-section { display: none; margin-top: 1.5rem; }
+  .tabs { display: flex; border-bottom: 1px solid #e0e3e7; margin-bottom: 1rem; }
+  .tab { padding: 8px 18px; font-size: 13px; cursor: pointer; border: none; background: transparent; color: #5d6d7e; border-bottom: 2px solid transparent; margin-bottom: -1px; font-family: inherit; }
+  .tab.active { color: #0d2137; border-bottom-color: #0d2137; font-weight: 500; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+  .out-box { background: #f8f9fa; border: 1px solid #e0e3e7; border-radius: 8px; padding: 1.1rem; font-size: 13px; line-height: 1.75; white-space: pre-wrap; min-height: 180px; max-height: 460px; overflow-y: auto; color: #1c2833; }
+  .action-row { display: flex; gap: 8px; margin-top: 10px; }
+  .btn-copy, .btn-word { flex: 1; padding: 8px; border-radius: 8px; font-size: 13px; cursor: pointer; font-family: inherit; border: 1px solid #cdd3da; background: #fff; color: #5d6d7e; }
+  .btn-word { border-color: #1e8449; color: #1d6a39; background: #eafaf1; }
+  .btn-copy:hover { background: #f4f6f7; }
+  .api-section { margin-bottom: 1.25rem; }
+  .api-label { font-size: 13px; color: #784212; margin-bottom: 5px; font-weight: 500; }
+  .api-box { display: flex; gap: 8px; align-items: center; }
+  .api-box input { margin-bottom: 0; flex: 1; font-family: monospace; font-size: 13px; }
+  .btn-save-key { padding: 9px 14px; border-radius: 8px; border: 1px solid #784212; background: #fef9e7; color: #784212; cursor: pointer; font-family: inherit; font-size: 13px; white-space: nowrap; }
+  .api-hint { font-size: 11px; color: #5d6d7e; margin-top: 4px; }
+  .key-ok { font-size: 12px; color: #1d6a39; margin-top: 4px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="card">
+    <h1>Generador de Carta y CV Adaptado</h1>
+    <p class="sub">Herramienta personal de Ramón Díaz Ríos — Subgerente / Jefe de Operaciones & Manufactura</p>
+
+    <div class="api-section">
+      <div class="api-label">API Key de Anthropic</div>
+      <div class="api-box">
+        <input type="password" id="api-key" placeholder="sk-ant-api03-..." />
+        <button class="btn-save-key" onclick="saveKey()">Guardar</button>
+      </div>
+      <div class="api-hint">La key se guarda solo en tu navegador (localStorage). Obtén una en <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a></div>
+      <div class="key-ok" id="key-ok"></div>
+    </div>
+
+    <label>Cargo / título de la posición</label>
+    <input type="text" id="inp-cargo" placeholder="Ej: Jefe de Mantenimiento Industrial" />
+
+    <div class="row2">
+      <div>
+        <label>Empresa / reclutadora</label>
+        <input type="text" id="inp-empresa" placeholder="Ej: Integrhal Consultores" />
+      </div>
+      <div>
+        <label>Tipo de cargo</label>
+        <select id="inp-tipo">
+          <option value="jefatura">Jefatura ($2.700.000 – $3.200.000)</option>
+          <option value="subgerencia">Subgerencia ($3.500.000 – $4.200.000)</option>
+          <option value="gerencia">Gerencia ($4.200.000+)</option>
+        </select>
+      </div>
+    </div>
+
+    <label>Descripción completa de la oferta</label>
+    <textarea id="inp-desc" rows="8" placeholder="Pega aquí el texto completo de la oferta: funciones, requisitos, lo que ofrecen, etc." oninput="resetChips()"></textarea>
+
+    <label>Énfasis a destacar</label>
+    <div class="chips" id="chips-container">
+      <span class="chip" data-v="mantenimiento">Mantenimiento industrial</span>
+      <span class="chip" data-v="liderazgo">Liderazgo de equipos</span>
+      <span class="chip" data-v="lean">Lean / TPM / Six Sigma</span>
+      <span class="chip" data-v="proyectos">Gestión de proyectos</span>
+      <span class="chip" data-v="costos">Control de costos</span>
+      <span class="chip" data-v="inocuidad">Inocuidad / ISO 9001</span>
+      <span class="chip" data-v="elaboracion">Elaboración de bebidas</span>
+      <span class="chip" data-v="facilities">Facilities / infraestructura</span>
+      <span class="chip" data-v="sistemas">Sistemas críticos (frío/vapor/agua)</span>
+      <span class="chip" data-v="presupuesto">Gestión presupuestaria</span>
+      <span class="chip" data-v="proveedores">Coordinación de proveedores</span>
+      <span class="chip" data-v="kpis">KPIs y mejora continua</span>
+    </div>
+    <button class="btn-analyze" id="btn-analyze" onclick="analizarEnfasis()">Analizar oferta y recomendar énfasis ↗</button>
+    <div class="rec-hint" id="rec-hint"></div>
+
+    <label>Contexto adicional (opcional)</label>
+    <textarea id="inp-extra" rows="2" placeholder="Ej: rubro lácteo, hay un gap en SAP que quiero mencionar estratégicamente..."></textarea>
+
+    <button class="btn-gen" id="btn-gen" onclick="generar()">Generar carta, CV adaptado y respuestas de formulario</button>
+    <div class="progress" id="progress"><div class="progress-inner"></div></div>
+    <div class="status" id="status"></div>
+  </div>
+
+  <div class="out-section card" id="out-section">
+    <div class="tabs">
+      <button class="tab active" onclick="showTab('carta',this)">Carta de presentación</button>
+      <button class="tab" onclick="showTab('cv',this)">CV adaptado</button>
+      <button class="tab" onclick="showTab('resp',this)">Respuestas formulario</button>
+    </div>
+    <div class="panel active" id="panel-carta">
+      <div class="out-box" id="out-carta"></div>
+      <div class="action-row">
+        <button class="btn-copy" onclick="copiar('out-carta',this)">Copiar carta</button>
+        <button class="btn-word" onclick="alert('Abre Claude en claude.ai y pide: Genera un Word con esta carta:\n\n' + document.getElementById(\'out-carta\').textContent)">Generar Word (via Claude)</button>
+      </div>
+    </div>
+    <div class="panel" id="panel-cv">
+      <div class="out-box" id="out-cv"></div>
+      <div class="action-row">
+        <button class="btn-copy" onclick="copiar('out-cv',this)">Copiar CV</button>
+        <button class="btn-word" onclick="alert('Abre Claude en claude.ai y pide: Genera un Word con este CV:\n\n' + document.getElementById(\'out-cv\').textContent)">Generar Word (via Claude)</button>
+      </div>
+    </div>
+    <div class="panel" id="panel-resp">
+      <div class="out-box" id="out-resp"></div>
+      <div class="action-row">
+        <button class="btn-copy" onclick="copiar('out-resp',this)">Copiar respuestas</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const CV_RAMON = `RAMÓN DÍAZ RÍOS — Perfil ejecutivo
+Cargo actual: Jefe de Elaboración, CCU Chile (Junio 2022 – Presente)
+- Dirección de 4 salas de elaboración, 30 operadores a cargo
+- Procesos: jarabe simple, jarabe terminado, unificación de materias primas
+- Reducción de mermas, optimización energética, KPIs operacionales
+- Estándares BPM, HACCP, ISO 9001 — cero incidentes en auditorías internas
+
+Cargo anterior: Jefe de Procesos Suministros y Elaboración, Coca-Cola Andina (Mayo 2020 – Junio 2022)
+- 6 plantas de servicios auxiliares: frío industrial, vapor y agua tratada
+- 22 técnicos a cargo, gestión de presupuesto operacional
+- Planes preventivos y predictivos → +15% disponibilidad de equipos
+- Reducción de costos correctivos, RCA, cero observaciones en auditorías corporativas
+
+Cargo anterior: Ingeniero de Proyecto, Coca-Cola Andina (Dic 2019 – Mayo 2020)
+- Proyectos de mejora e inversión desde evaluación técnica hasta puesta en marcha
+- Coordinación de hasta 4 contratistas simultáneos
+
+Progresión Coca-Cola Andina (9 años):
+Facilitador de Procesos Suministros | Facilitador de Planta Suministros | Operador de Planta
+
+Formación:
+- Ingeniería en Proyectos de Ingeniería — UTFSM (2019–2023)
+- Diplomado Liderazgo, Operaciones y Gestión Comercial — UNAB (2017)
+- Ingeniería en Mantenimiento Industrial — INACAP (2003–2008)
+
+Competencias: Lean Manufacturing, TPM, RCA/5 Porqués, ISO 9001, HACCP, BPM, HSEQ,
+mantenimiento preventivo/predictivo, KPIs (OEE, MTTR, MTBF), control presupuestario,
+sistemas de frío industrial, vapor, agua tratada, elaboración de bebidas.
+Contacto: ramon.diaz.r@gmail.com | +56 9 5199 8562 | linkedin.com/in/ramondiazr | Santiago`;
+
+window.addEventListener('DOMContentLoaded', () => {
+  const saved = localStorage.getItem('anthropic_key');
+  if (saved) {
+    document.getElementById('api-key').value = saved;
+    document.getElementById('key-ok').textContent = '✓ API Key cargada desde tu navegador';
+  }
+  document.querySelectorAll('.chip').forEach(c =>
+    c.addEventListener('click', () => {
+      c.classList.toggle('active');
+      c.classList.remove('recommended');
+    })
+  );
+});
+
+function saveKey() {
+  const key = document.getElementById('api-key').value.trim();
+  if (!key.startsWith('sk-')) { alert('Ingresa una API key válida (comienza con sk-ant-...)'); return; }
+  localStorage.setItem('anthropic_key', key);
+  document.getElementById('key-ok').textContent = '✓ API Key guardada en tu navegador';
+}
+
+function getKey() { return localStorage.getItem('anthropic_key') || document.getElementById('api-key').value.trim(); }
+
+function resetChips() {
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active','recommended'));
+  document.getElementById('rec-hint').textContent = '';
+}
+
+async function callAPI(prompt, maxTokens) {
+  const key = getKey();
+  if (!key) throw new Error('Sin API key');
+  const r = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
+    body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: maxTokens, messages: [{ role: 'user', content: prompt }] })
+  });
+  const d = await r.json();
+  if (d.error) throw new Error(d.error.message);
+  return d.content?.[0]?.text || '';
+}
+
+async function analizarEnfasis() {
+  const desc = document.getElementById('inp-desc').value.trim();
+  if (!desc) { document.getElementById('rec-hint').textContent = 'Primero pega la descripción de la oferta.'; return; }
+  const btn = document.getElementById('btn-analyze');
+  btn.disabled = true; btn.textContent = 'Analizando...';
+  try {
+    const raw = await callAPI(`Analiza esta oferta y devuelve SOLO un JSON: {"recomendados":["clave1","clave2",...],"razon":"una frase"}
+Claves disponibles: mantenimiento, liderazgo, lean, proyectos, costos, inocuidad, elaboracion, facilities, sistemas, presupuesto, proveedores, kpis
+Oferta: ${desc}`, 200);
+    const match = raw.match(/\{[\s\S]*\}/);
+    const parsed = match ? JSON.parse(match[0]) : { recomendados: [], razon: '' };
+    document.querySelectorAll('.chip').forEach(c => {
+      c.classList.remove('active','recommended');
+      if (parsed.recomendados.includes(c.dataset.v)) c.classList.add('recommended','active');
+    });
+    document.getElementById('rec-hint').textContent = parsed.razon ? `★ ${parsed.razon}` : `★ ${parsed.recomendados.length} énfasis recomendados.`;
+  } catch(e) {
+    document.getElementById('rec-hint').textContent = 'Error al analizar. Verifica tu API key.';
+  }
+  btn.disabled = false; btn.textContent = 'Analizar oferta y recomendar énfasis ↗';
+}
+
+function showTab(tab, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + tab).classList.add('active');
+  btn.classList.add('active');
+}
+
+function copiar(id, btn) {
+  navigator.clipboard.writeText(document.getElementById(id).textContent).then(() => {
+    const orig = btn.textContent; btn.textContent = '✓ Copiado';
+    setTimeout(() => btn.textContent = orig, 1800);
+  });
+}
+
+async function streamText(el, text) {
+  el.textContent = '';
+  const words = text.split(' ');
+  for (let i = 0; i < words.length; i++) {
+    el.textContent += (i > 0 ? ' ' : '') + words[i];
+    if (i % 12 === 0) await new Promise(r => setTimeout(r, 8));
+  }
+}
+
+async function generar() {
+  if (!getKey()) { alert('Ingresa tu API key de Anthropic primero.'); return; }
+  const cargo   = document.getElementById('inp-cargo').value.trim();
+  const empresa = document.getElementById('inp-empresa').value.trim();
+  const desc    = document.getElementById('inp-desc').value.trim();
+  const tipo    = document.getElementById('inp-tipo').value;
+  const extra   = document.getElementById('inp-extra').value.trim();
+  const enfasis = [...document.querySelectorAll('.chip.active')].map(c => c.textContent.replace(' ★','').trim()).join(', ');
+  if (!cargo || !desc) { document.getElementById('status').textContent = 'Completa el cargo y la descripción.'; return; }
+  const renta = tipo === 'jefatura' ? '$2.700.000 – $3.200.000' : tipo === 'subgerencia' ? '$3.500.000 – $4.200.000' : '$4.200.000+';
+  const btn = document.getElementById('btn-gen');
+  btn.disabled = true;
+  document.getElementById('progress').classList.add('active');
+  document.getElementById('out-section').style.display = 'none';
+  document.getElementById('status').textContent = 'Generando los 3 documentos en paralelo...';
+  const BASE = `Candidato:\n${CV_RAMON}\n\nOferta:\nCargo: ${cargo}\nEmpresa: ${empresa}\nDescripción: ${desc}\n${extra ? 'Contexto: '+extra : ''}\nÉnfasis: ${enfasis}\nRenta esperada: ${renta} líquidos`;
+  try {
+    const [carta, cv, resp] = await Promise.all([
+      callAPI(`Eres experto en headhunting para manufactura en Chile. ${BASE}\n\nRedacta carta de presentación ejecutiva y perfilada: apertura potente, 3-4 párrafos conectando requisitos con experiencia real, tabla de ajuste al cargo, cierre con CTA. Máx 500 palabras, párrafos sin bullets. Incluye renta al final. Devuelve SOLO la carta.`, 1000),
+      callAPI(`Eres experto en headhunting para manufactura en Chile. ${BASE}\n\nRedacta CV adaptado: 1) titular adaptado, 2) perfil profesional con keywords del aviso, 3) experiencia con logros STAR y verbos fuertes priorizando relevancia para esta oferta, 4) habilidades técnicas relevantes, 5) formación completa. Devuelve SOLO el CV.`, 1000),
+      callAPI(`${BASE}\n\nRedacta respuestas para formularios de portales chilenos (máx 255 chars c/u):\n1. Pretensión de renta (solo monto)\n2. Experiencia en cargo y rubro\n3. Personas lideradas\n4. Movilización propia\n5. Logro más relevante para ESTE cargo\n6. Por qué le interesa este cargo\nFormato: CAMPO: respuesta (X chars). Solo respuestas.`, 600)
+    ]);
+    document.getElementById('progress').classList.remove('active');
+    document.getElementById('status').textContent = '✓ Listo — carta, CV y respuestas generados.';
+    document.getElementById('out-section').style.display = 'block';
+    await streamText(document.getElementById('out-carta'), carta);
+    document.getElementById('out-cv').textContent = cv;
+    document.getElementById('out-resp').textContent = resp;
+  } catch(e) {
+    document.getElementById('status').textContent = 'Error: ' + e.message;
+    document.getElementById('progress').classList.remove('active');
+  }
+  btn.disabled = false;
+}
+</script>
+</body>
+</html>
